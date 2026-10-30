@@ -73,9 +73,12 @@
   function copyCode() {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(CODE).catch(function () {});
   }
+  // 쿠폰 버튼 클릭 기록: 어느 위치 버튼인지(position), 이 방문에서 몇 번째 클릭인지(click_count)
+  var claimClicks = 0;
   function claim(e) {
     e.preventDefault();
-    track("coupon_claim_click", { position: e.currentTarget.dataset.claim, first_claim: !claimed, device: platform });
+    claimClicks++;
+    track("coupon_claim_click", { position: e.currentTarget.dataset.claim, click_count: claimClicks, first_claim: !claimed, device: platform });
     markClaimed();
     copyCode();
     if (platform === "desktop") {
@@ -119,6 +122,20 @@
     var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
     toast("코드를 선택했어요. 복사해서 쓰세요");
   }
+
+  // §3.2 이벤트: 자주 묻는 질문을 열고 닫을 때마다 기록 (어떤 질문을 몇 번째로 열었는지)
+  var faqOpened = 0;
+  document.querySelectorAll(".faq details").forEach(function (d, i) {
+    d.addEventListener("toggle", function () {
+      if (d.open) faqOpened++;
+      track(d.open ? "faq_open" : "faq_close", {
+        question: d.querySelector("summary").textContent.trim(),
+        question_index: i + 1,
+        open_order: d.open ? faqOpened : undefined,
+        device: platform
+      });
+    });
+  });
 
   // 히어로 버튼이 화면 밖으로 나가면 하단 고정 CTA 표시
   var dock = document.getElementById("dock");
